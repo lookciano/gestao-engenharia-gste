@@ -2,11 +2,10 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text-html; charset=utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acompanhamento das Atas de Reunião</title>
     
-    <!-- Scripts Funcionais -->
     <script src="https://cdn.tailwindcss.com"></script> 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -103,7 +102,6 @@
         .checkbox-list {
             background-color: white; border: 1px solid var(--border-color);
             border-radius: 4px; padding: 8px; 
-            /* Removido max-height e overflow-y para mostrar tudo nativamente */
         }
         .checkbox-item { display: flex; align-items: center; margin-bottom: 6px; cursor: pointer; font-size: 0.85rem; }
         .checkbox-item input { margin-right: 8px; cursor: pointer; }
@@ -155,7 +153,7 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #fff; width: 90%; max-width: 800px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 90vh; }
         .modal-header { background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .modal-body { padding: 20px; flex: 1; } /* Removido overflow daqui para ficar no editor de texto */
         .modal-footer { padding: 15px 20px; background: #f8f9fa; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 10px; }
     </style>
 </head>
@@ -163,7 +161,6 @@
 
 <div class="container">
     
-    <!-- CABEÇALHO -->
     <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
         <div style="flex: 1; min-width: 300px;">
             <h1 style="text-align: left;">Acompanhamento das Atas de Reunião</h1>
@@ -180,7 +177,6 @@
         </div>
     </div>
 
-    <!-- ÁREA DE UPLOAD -->
     <div class="card">
         <div class="upload-area" onclick="document.getElementById('fileUploadAta').click()">
             <h3>Clique para fazer Upload da Ata de Reunião (Excel)</h3>
@@ -189,10 +185,8 @@
         </div>
     </div>
 
-    <!-- DASHBOARD E FILTROS -->
     <div id="dashboardArea" style="display:none;">
         
-        <!-- Contadores (Estilo GSTE) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="card" style="margin-bottom: 0; text-align: center; border-bottom: 4px solid #007bff;">
                 <p style="font-size: 0.8rem; font-weight: bold; color: #6c757d; text-transform: uppercase;">Total Monitorados</p>
@@ -208,17 +202,14 @@
             </div>
         </div>
 
-        <!-- Painel de Filtros -->
         <div class="card" style="background-color: #f8f9fa; border: 1px solid var(--border-color);">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Busca Livre -->
                 <div class="filter-group">
                     <label>Buscar Texto Livre</label>
                     <input type="text" id="searchInput" class="search-input" placeholder="Ex: Fauke, Civil, Fundações...">
                     <span style="font-size: 0.75rem; color: #888; margin-top: 4px;">Pesquisa global ignorando acentuação.</span>
                 </div>
 
-                <!-- Filtro Status -->
                 <div class="filter-group">
                     <label>Filtrar por Status</label>
                     <div class="checkbox-list">
@@ -229,7 +220,6 @@
                     </div>
                 </div>
 
-                <!-- Filtro Disciplina -->
                 <div class="filter-group">
                     <label>Filtrar por Disciplina</label>
                     <div class="checkbox-list">
@@ -244,7 +234,6 @@
             </div>
         </div>
 
-        <!-- TABELA PRINCIPAL -->
         <div class="card" style="padding: 0; overflow: visible;">
             <div class="table-responsive">
                 <table id="dataTable">
@@ -258,15 +247,13 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- Gerado via JS -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MODAL RELATÓRIO DE COBRANÇA -->
 <div id="modalRelatorio" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
@@ -274,13 +261,15 @@
             <button onclick="fecharModalRelatorio()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; line-height:1;">&times;</button>
         </div>
         <div class="modal-body">
-            <p style="font-size: 0.9rem; color: #555; margin-bottom: 15px;">Abaixo estão os itens marcados como <strong>"Não Cumprido"</strong> de acordo com os filtros ativos na tela.</p>
-            <textarea id="textoRelatorio" style="width: 100%; height: 300px; padding: 10px; font-family: monospace; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; resize: none; outline: none; background-color: #f8f9fa;" readonly></textarea>
+            <p style="font-size: 0.9rem; color: #555; margin-bottom: 10px;">Abaixo estão os itens marcados como <strong>"Não Cumprido"</strong>. Copie e cole direto no seu e-mail (a formatação e o negrito serão mantidos).</p>
+            
+            <div id="textoRelatorio" contenteditable="true" style="width: 100%; height: 350px; padding: 15px; font-family: var(--font-family); font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; overflow-y: auto; outline: none; background-color: #f8f9fa; color: #333; line-height: 1.5;"></div>
+        
         </div>
         <div class="modal-footer">
             <button onclick="fecharModalRelatorio()" class="btn-secondary">Fechar</button>
             <button onclick="copiarRelatorio()" class="btn-primary" style="background-color: #007bff;">
-                Copiar Texto
+                Copiar Formatação para E-mail
             </button>
         </div>
     </div>
@@ -307,13 +296,11 @@
         reader.readAsArrayBuffer(file);
     });
 
-    // Função utilitária para normalizar acentos (Essencial para buscas em português)
     function removerAcentos(str) {
         if (!str) return "";
         return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     }
 
-    // Leitura inteligente de datas
     function checkDates(text, dateFlags, today) {
         if(!text) return;
         const regex = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g;
@@ -364,12 +351,21 @@
             let isAtrasado = false;
             let isConcluido = false;
             let statusDetalhadoHTML = [];
+            
+            // Variáveis para gravar o último status preenchido e sua data para o relatório de cobrança
+            let ultimoStatusNome = "Não Iniciado / Sem Status";
+            let ultimoStatusValor = "-";
+
             let dateFlags = { hasFutureDate: false, hasPastDate: false };
 
             for (let s = 6; s <= 11; s++) {
                 let cellContent = String(row[s] || "").trim();
                 if (cellContent) {
                     hasStatus = true;
+                    
+                    ultimoStatusNome = nomeStatusColunas[s - 6];
+                    ultimoStatusValor = cellContent;
+
                     statusDetalhadoHTML.push(`<div style="margin-bottom: 4px;"><span style="font-weight:600; color:#495057;">${nomeStatusColunas[s - 6]}:</span> <span style="color:#0056b3;">${cellContent}</span></div>`);
                     let strLow = removerAcentos(cellContent);
                     
@@ -443,6 +439,8 @@
                 disciplina: colB || "-",
                 descricao: finalDescricao,
                 observacao: observacaoGeral,
+                ultimoStatusNome: ultimoStatusNome,    // Gravando para o Relatório HTML
+                ultimoStatusValor: ultimoStatusValor,  // Gravando para o Relatório HTML
                 statusHTML: statusDetalhadoHTML.join(""),
                 infosExtras: infosExtrasArr.join(" | "),
                 acaoUsuario: preAcaoSelecionada,
@@ -624,34 +622,42 @@
         });
     }
 
+    // =========================================================
+    // RELATÓRIO DE COBRANÇA EM FORMATO HTML/RICH TEXT
+    // =========================================================
     function abrirModalRelatorio() {
         const itensNaoCumpridos = currentFilteredData.filter(i => i.type === "data" && i.acaoUsuario === "nao_cumprido");
-        const textArea = document.getElementById('textoRelatorio');
+        const divRelatorio = document.getElementById('textoRelatorio');
         
         if(itensNaoCumpridos.length === 0) {
-            textArea.value = "Nenhum item marcado como 'Não Cumprido' encontrado com os filtros atuais. Excelente trabalho!";
+            divRelatorio.innerHTML = "<p style='color: #28a745; font-weight: bold;'>Nenhum item marcado como 'Não Cumprido' encontrado com os filtros atuais. Excelente trabalho!</p>";
         } else {
-            let relatorioFinal = "RELATÓRIO DE PENDÊNCIAS DA SEMANA - FISCALIZAÇÃO\n";
-            relatorioFinal += "=================================================\n\n";
+            let relatorioFinal = "<p style='font-size: 1rem;'><strong>RELATÓRIO DE PENDÊNCIAS DA SEMANA - FISCALIZAÇÃO</strong><br>";
+            relatorioFinal += "<span style='color: #6c757d;'>=================================================</span></p>";
             
             let subestacoes = [...new Set(itensNaoCumpridos.map(i => i.subestacao))];
             
             subestacoes.forEach(sub => {
-                relatorioFinal += `[ ${sub.toUpperCase()} ]\n`;
-                relatorioFinal += `-------------------------------------------------\n`;
+                relatorioFinal += `<p style="margin-top: 18px; margin-bottom: 6px; font-size: 1.05rem; color: #343a40;"><strong>[ ${sub.toUpperCase()} ]</strong><br>`;
+                relatorioFinal += `<span style="color: #6c757d;">-------------------------------------------------</span></p>`;
                 
                 let itensDaSub = itensNaoCumpridos.filter(i => i.subestacao === sub);
                 itensDaSub.forEach(item => {
-                    relatorioFinal += `- DISCIPLINA: ${item.disciplina}\n`;
-                    relatorioFinal += `  ITEM: ${item.descricao}\n`;
-                    if(item.observacao) relatorioFinal += `  OBS: ${item.observacao}\n`;
-                    if(item.infosExtras) relatorioFinal += `  REFERÊNCIA: ${item.infosExtras}\n`;
-                    relatorioFinal += `\n`;
+                    relatorioFinal += `<div style="margin-bottom: 12px; margin-left: 10px;">`;
+                    relatorioFinal += `&bull; <strong>DISCIPLINA:</strong> ${item.disciplina}<br>`;
+                    relatorioFinal += `&nbsp;&nbsp;<strong>ITEM:</strong> ${item.descricao}<br>`;
+                    
+                    // Aqui entra o Nome do Status e a Data do Status Atual
+                    relatorioFinal += `&nbsp;&nbsp;<strong>STATUS ATUAL:</strong> <span style="color:#0056b3; font-weight:600;">${item.ultimoStatusNome}</span> - ${item.ultimoStatusValor}<br>`;
+                    
+                    if(item.observacao) relatorioFinal += `&nbsp;&nbsp;<strong>OBS:</strong> ${item.observacao}<br>`;
+                    if(item.infosExtras) relatorioFinal += `&nbsp;&nbsp;<strong>REFERÊNCIA:</strong> ${item.infosExtras}<br>`;
+                    relatorioFinal += `</div>`;
                 });
             });
             
-            relatorioFinal += "Solicitamos especial atenção e retorno sobre os itens listados acima o mais breve possível.";
-            textArea.value = relatorioFinal;
+            relatorioFinal += "<p style='margin-top: 20px; font-weight: 500;'>Solicitamos especial atenção e retorno sobre os itens listados acima o mais breve possível.</p>";
+            divRelatorio.innerHTML = relatorioFinal;
         }
         
         document.getElementById('modalRelatorio').style.display = 'flex';
@@ -662,14 +668,22 @@
     }
 
     function copiarRelatorio() {
-        const textArea = document.getElementById('textoRelatorio');
-        textArea.select();
-        textArea.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(textArea.value).then(() => {
-            alert("Texto copiado para a área de transferência! Cole no seu e-mail.");
-        }).catch(err => {
-            alert("Falha ao copiar texto. Selecione manualmente e copie.");
-        });
+        const divRelatorio = document.getElementById('textoRelatorio');
+        const range = document.createRange();
+        range.selectNodeContents(divRelatorio);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        try {
+            document.execCommand('copy');
+            alert("Texto copiado para a área de transferência com formatação! Cole direto no corpo do seu e-mail.");
+        } catch (err) {
+            alert("Falha ao copiar texto. Selecione o texto manualmente e copie (Ctrl+C).");
+        }
+        
+        // Remove a seleção visual depois de copiar
+        selection.removeAllRanges();
     }
 </script>
 </body>
