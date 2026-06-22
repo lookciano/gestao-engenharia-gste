@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Engenharia GSTE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #008e9a;
+            --secondary-color: #6f6e6e;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 900px;
+            padding: 40px;
+        }
+
+        .portal-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .portal-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 20px rgba(0, 142, 154, 0.2);
+        }
+
+        .btn-gste {
+            background-color: var(--primary-color);
+            transition: background-color 0.2s;
+        }
+
+        .btn-gste:hover {
+            background-color: #007680;
+        }
+
+        /* Modal Styles */
+        #passwordModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-card">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Portal de Engenharia GSTE</h1>
+            <p class="text-gray-600">Central de Gestão de Documentos e Atividades</p>
+            <div class="w-24 h-1 bg-[#008e9a] mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Card Controle de Documentos -->
+            <div class="portal-card bg-white p-8 rounded-xl border border-gray-100 flex flex-col items-center text-center">
+                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6 text-[#008e9a]">
+                    <i class="fas fa-file-invoice fa-3x"></i>
+                </div>
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Controle de Documentos</h2>
+                <p class="text-gray-500 mb-8 flex-grow">Acesso à plataforma de gestão e monitoramento de documentos de engenharia.</p>
+                <a href="documentos.html" class="w-full py-3 px-6 btn-gste text-white rounded-lg font-bold uppercase tracking-wider">
+                    Acessar Plataforma
+                </a>
+            </div>
+
+            <!-- Card Acompanhamento de ATA -->
+            <div class="portal-card bg-white p-8 rounded-xl border border-gray-100 flex flex-col items-center text-center">
+                <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6 text-red-500">
+                    <i class="fas fa-tasks fa-3x"></i>
+                </div>
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Acompanhamento de ATA</h2>
+                <p class="text-gray-500 mb-8 flex-grow">Gestão de atividades, compromissos e restrições constantes em ata.</p>
+                <button onclick="openPasswordModal()" class="w-full py-3 px-6 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold uppercase tracking-wider transition-colors">
+                    <i class="fas fa-lock mr-2"></i> Acesso Restrito
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-12 text-center text-gray-400 text-sm">
+            &copy; 2026 GSTE - Gestão de Engenharia. Todos os direitos reservados.
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Acesso Restrito</h3>
+            <p class="text-gray-600 mb-6">Por favor, insira a senha para acessar o Acompanhamento de ATA.</p>
+            
+            <input type="password" id="passwordInput" 
+                class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                placeholder="Digite a senha..."
+                onkeyup="if(event.key === 'Enter') checkPassword()">
+            
+            <div id="errorMessage" class="text-red-500 text-sm mb-4 hidden">Senha incorreta. Tente novamente.</div>
+            
+            <div class="flex gap-4">
+                <button onclick="closePasswordModal()" class="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition-colors">
+                    Cancelar
+                </button>
+                <button onclick="checkPassword()" class="flex-1 py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors">
+                    Entrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openPasswordModal() {
+            document.getElementById('passwordModal').style.display = 'flex';
+            document.getElementById('passwordInput').focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function checkPassword() {
+            const pass = document.getElementById('passwordInput').value;
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (pass === "GSTE") {
+                window.location.href = "ata.html";
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('passwordModal');
+            if (event.target == modal) {
+                closePasswordModal();
+            }
+        }
+    </script>
+</body>
+</html>

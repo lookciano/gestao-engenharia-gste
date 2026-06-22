@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text-html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompanhamento das Atas de Reunião</title>
+    
+    <!-- Scripts Funcionais -->
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        /* =========================================================
+           PADRÃO VISUAL CORPORATIVO GSTE 
+           ========================================================= */
+        :root {
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --bg-card: #ffffff;
+            --text-primary: #333;
+            --border-color: #ddd;
+            
+            /* Cores de Status Oficiais */
+            --color-green-light: #d4edda;
+            --text-green-light: #155724;
+            --color-blue: #cce5ff;
+            --text-blue: #004085;
+            --color-yellow: #fff3cd;
+            --text-yellow: #856404;
+            --color-green-dark: #198754;
+            --text-green-dark: #ffffff;
+            --color-orange-dark: #fd7e14;
+            --text-orange-dark: #ffffff;
+            --color-red: #f8d7da;
+            --text-red: #721c24;
+            --color-purple: #e2d1f0;
+            --text-purple: #4b0082;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, #008e9a, #6f6e6e);
+            min-height: 100vh;
+            color: var(--text-primary);
+            padding: 15px;
+        }
+
+        h1 { margin-top: 0; font-weight: 600; color: #2c3e50; text-align: center; margin-bottom: 5px; }
+
+        /* LARGURA TOTAL DA PÁGINA */
+        .container { width: 100%; max-width: none; padding: 0 10px; margin: 0 auto; }
+
+        .card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        /* Botões Padrão GSTE */
+        .btn-primary {
+            padding: 9px 15px; cursor: pointer;
+            background: #dc3545; color: white; border: none;
+            border-radius: 4px; font-size: 0.9rem; font-weight: 600;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: #c82333; }
+        .btn-secondary {
+            padding: 9px 15px; cursor: pointer;
+            background: #6c757d; color: white; border: none;
+            border-radius: 4px; font-size: 0.9rem; font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-secondary:hover { background: #5a6268; }
+
+        /* Área de Upload Padrão GSTE */
+        .upload-area {
+            border: 2px dashed #ccc; padding: 25px; text-align: center;
+            cursor: pointer; transition: border 0.3s, background-color 0.3s; 
+            border-radius: 8px; background-color: #fafafa;
+        }
+        .upload-area:hover { border-color: #66afe9; background-color: #f0f8ff; }
+        .upload-area h3 { margin-bottom: 5px; color: #333; font-weight: 600; }
+        .upload-area p { color: #666; font-size: 0.85rem; }
+        #fileUploadAta { display: none; }
+
+        /* Inputs e Filtros */
+        .filter-group { display: flex; flex-direction: column; min-width: 180px; margin-bottom: 10px; }
+        .filter-group label { font-size: 0.85rem; font-weight: 700; margin-bottom: 5px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;}
+        .search-input {
+            width: 100%; padding: 8px 12px; background-color: white;
+            border: 1px solid var(--border-color); border-radius: 4px;
+            font-size: 0.9rem; font-family: var(--font-family); outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input:focus { border-color: #66afe9; box-shadow: 0 0 0 3px rgba(102, 175, 233, 0.25); }
+
+        /* Checkboxes Customizados - SEM BARRA DE ROLAGEM INTERNA */
+        .checkbox-list {
+            background-color: white; border: 1px solid var(--border-color);
+            border-radius: 4px; padding: 8px; 
+            /* Removido max-height e overflow-y para mostrar tudo nativamente */
+        }
+        .checkbox-item { display: flex; align-items: center; margin-bottom: 6px; cursor: pointer; font-size: 0.85rem; }
+        .checkbox-item input { margin-right: 8px; cursor: pointer; }
+        .checkbox-item:hover { background-color: #f9f9f9; }
+
+        /* Tabela Padrão GSTE - LARGURA 100% E SEM BARRA DE ROLAGEM INTERNA */
+        .table-responsive { width: 100%; border: 1px solid var(--border-color); border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed; }
+        
+        table th:nth-child(1) { width: 12%; }
+        table th:nth-child(2) { width: 35%; }
+        table th:nth-child(3) { width: 18%; } 
+        table th:nth-child(4) { width: 15%; }
+        table th:nth-child(5) { width: 20%; }
+
+        /* Cabeçalho "Colado" ao rolar a página inteira */
+        thead th { position: sticky; top: 0; background-color: #343a40; color: white; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); word-wrap: break-word; }
+        th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
+        
+        /* Hierarquia de Linhas */
+        .row-title { background-color: #94a3b8 !important; color: #ffffff !important; font-weight: 800; font-size: 0.95rem; text-transform: uppercase; border-top: 2px solid #64748b;}
+        .row-subtitle { background-color: #cbd5e1 !important; color: #334155 !important; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; }
+        
+        /* Cores de Ação */
+        .tr-cumprido { background-color: var(--color-green-light); color: var(--text-primary); border-left: 4px solid var(--color-green-dark); }
+        .tr-nao-cumprido { background-color: var(--color-red); color: var(--text-primary); border-left: 4px solid #dc3545; }
+        .tr-pendente { background-color: #ffffff; border-left: 4px solid transparent; }
+        .tr-pendente:hover { background-color: #f1f5f9; }
+
+        /* Componente de Seleção de Ação */
+        .action-select {
+            width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc;
+            font-family: var(--font-family); font-size: 0.85rem; font-weight: bold; cursor: pointer; outline: none;
+        }
+        .action-select.cumprido { background-color: var(--color-green-light); color: var(--text-green-light); border-color: #c3e6cb; }
+        .action-select.nao-cumprido { background-color: var(--color-red); color: var(--text-red); border-color: #f5c6cb; }
+        .action-select.pendente { background-color: #ffffff; color: var(--text-primary); }
+
+        /* Badges de Status GSTE */
+        .badge { display: inline-block; padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-top: 5px; margin-right: 5px; }
+        .badge-warning { background-color: var(--color-yellow); color: var(--text-yellow); border: 1px solid #ffeeba; }
+        .badge-danger { background-color: var(--color-red); color: var(--text-red); border: 1px solid #f5c6cb; }
+        .badge-info { background-color: var(--color-blue); color: var(--text-blue); border: 1px solid #b8daff; }
+
+        .obs-box { margin-top: 8px; font-size: 0.8rem; background: #f8f9fa; padding: 8px; border-left: 3px solid #6c757d; border-radius: 0 4px 4px 0; color: #495057; }
+        
+        /* Modais */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #fff; width: 90%; max-width: 800px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 90vh; }
+        .modal-header { background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 15px 20px; background: #f8f9fa; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- CABEÇALHO -->
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div style="flex: 1; min-width: 300px;">
+            <h1 style="text-align: left;">Acompanhamento das Atas de Reunião</h1>
+            <p style="color: #6c757d; font-size: 0.9rem; font-weight: 500;">Controle de compromissos com análise temporal, restrições e padrão corporativo GSTE</p>
+        </div>
+        <div>
+            <button onclick="abrirModalRelatorio()" class="btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    <path d="M4.603 12.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.701 19.701 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.187-.012.395-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.065.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.716 5.716 0 0 1-.911-.95 11.642 11.642 0 0 0-1.997.406 11.311 11.311 0 0 1-1.021 1.51c-.29.35-.608.655-.926.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.27.27 0 0 0 .08.08c.016.012.02.016.033.014.014-.003.03-.014.05-.03.052-.044.14-.134.25-.27.224-.28.48-.646.706-1.015-.022-.052-.045-.105-.067-.158zm-1.89-6.419c-.032.052-.041.11-.027.17.014.06.04.12.082.18.04.057.095.105.163.14.068.034.145.05.22.046.103-.005.195-.035.269-.08.075-.045.128-.106.162-.178.035-.072.05-.152.044-.233-.006-.08-.035-.156-.081-.22-.046-.064-.112-.116-.188-.146-.076-.03-.16-.042-.244-.029-.084.013-.164.045-.233.09-.07.045-.125.107-.161.18zm4.215 3.018c.094-.15.176-.307.247-.468a10.82 10.82 0 0 0 .42-1.092 7.785 7.785 0 0 1-.365 1.155c-.104.22-.224.437-.358.647a10.22 10.22 0 0 1-.168-.215 10.59 10.59 0 0 1-.225-.282zm3.308 1.114c.05.04.103.076.157.107.054.03.111.054.17.07.06.015.122.021.185.018.062-.003.123-.016.18-.039.058-.023.11-.057.157-.098.047-.04.088-.088.12-.142.031-.054.054-.114.066-.176.011-.062.012-.126.002-.188-.01-.061-.03-.12-.061-.174-.03-.053-.07-.1-.118-.139-.047-.04-.102-.072-.16-.096-.059-.024-.12-.038-.184-.042-.063-.004-.128.002-.191.018-.063.016-.122.043-.176.078-.053.035-.1.08-.14.13-.04.051-.073.108-.095.17-.022.062-.034.127-.035.193-.001.066.01.13.031.192z"/>
+                </svg>
+                Gerar Relatório de Cobrança
+            </button>
+        </div>
+    </div>
+
+    <!-- ÁREA DE UPLOAD -->
+    <div class="card">
+        <div class="upload-area" onclick="document.getElementById('fileUploadAta').click()">
+            <h3>Clique para fazer Upload da Ata de Reunião (Excel)</h3>
+            <p>Selecione o arquivo .xlsx ou .xls gerado para análise estrutural</p>
+            <input type="file" id="fileUploadAta" accept=".xlsx, .xls">
+        </div>
+    </div>
+
+    <!-- DASHBOARD E FILTROS -->
+    <div id="dashboardArea" style="display:none;">
+        
+        <!-- Contadores (Estilo GSTE) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="card" style="margin-bottom: 0; text-align: center; border-bottom: 4px solid #007bff;">
+                <p style="font-size: 0.8rem; font-weight: bold; color: #6c757d; text-transform: uppercase;">Total Monitorados</p>
+                <p style="font-size: 2rem; font-weight: 800; color: #343a40;" id="countTotal">0</p>
+            </div>
+            <div class="card" style="margin-bottom: 0; text-align: center; border-bottom: 4px solid #28a745;">
+                <p style="font-size: 0.8rem; font-weight: bold; color: #6c757d; text-transform: uppercase;">Cumpridos / OK</p>
+                <p style="font-size: 2rem; font-weight: 800; color: #198754;" id="countCumpridos">0</p>
+            </div>
+            <div class="card" style="margin-bottom: 0; text-align: center; border-bottom: 4px solid #dc3545;">
+                <p style="font-size: 0.8rem; font-weight: bold; color: #6c757d; text-transform: uppercase;">Atrasados / Cobrança</p>
+                <p style="font-size: 2rem; font-weight: 800; color: #dc3545;" id="countNaoCumpridos">0</p>
+            </div>
+        </div>
+
+        <!-- Painel de Filtros -->
+        <div class="card" style="background-color: #f8f9fa; border: 1px solid var(--border-color);">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Busca Livre -->
+                <div class="filter-group">
+                    <label>Buscar Texto Livre</label>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Ex: Fauke, Civil, Fundações...">
+                    <span style="font-size: 0.75rem; color: #888; margin-top: 4px;">Pesquisa global ignorando acentuação.</span>
+                </div>
+
+                <!-- Filtro Status -->
+                <div class="filter-group">
+                    <label>Filtrar por Status</label>
+                    <div class="checkbox-list">
+                        <label class="checkbox-item"><input type="checkbox" value="restricao" class="status-filter"> ⚠️ Com Restrição (G a L)</label>
+                        <label class="checkbox-item"><input type="checkbox" value="nao_cumprido" class="status-filter"> ❌ Não Cumpridos / Atrasados</label>
+                        <label class="checkbox-item"><input type="checkbox" value="pendente" class="status-filter"> ⏳ Em Acompanhamento</label>
+                        <label class="checkbox-item"><input type="checkbox" value="cumprido" class="status-filter"> ✅ Cumpridos</label>
+                    </div>
+                </div>
+
+                <!-- Filtro Disciplina -->
+                <div class="filter-group">
+                    <label>Filtrar por Disciplina</label>
+                    <div class="checkbox-list">
+                        <label class="checkbox-item"><input type="checkbox" value="civ" class="disc-filter"> Civil / Arquitetura (CIV / ARQ)</label>
+                        <label class="checkbox-item"><input type="checkbox" value="elm" class="disc-filter"> Eletromecânica (ELM)</label>
+                        <label class="checkbox-item"><input type="checkbox" value="ele" class="disc-filter"> Elétrica / Estudos (ELE / EST)</label>
+                        <label class="checkbox-item"><input type="checkbox" value="tel" class="disc-filter"> Telecomunicações (TEL)</label>
+                        <label class="checkbox-item"><input type="checkbox" value="cftv" class="disc-filter"> CFTV / Segurança</label>
+                        <label class="checkbox-item"><input type="checkbox" value="doc" class="disc-filter"> Geral / Documentos (GER / DOC)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABELA PRINCIPAL -->
+        <div class="card" style="padding: 0; overflow: visible;">
+            <div class="table-responsive">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Disciplina</th>
+                            <th>Item / Descrição da Ata</th>
+                            <th>Histórico (Status G-L)</th>
+                            <th>Prazos e Refs</th>
+                            <th style="text-align: center; background-color: #212529;">Acompanhamento (Ação)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Gerado via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RELATÓRIO DE COBRANÇA -->
+<div id="modalRelatorio" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Relatório de Cobrança / Pendências</span>
+            <button onclick="fecharModalRelatorio()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.9rem; color: #555; margin-bottom: 15px;">Abaixo estão os itens marcados como <strong>"Não Cumprido"</strong> de acordo com os filtros ativos na tela.</p>
+            <textarea id="textoRelatorio" style="width: 100%; height: 300px; padding: 10px; font-family: monospace; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; resize: none; outline: none; background-color: #f8f9fa;" readonly></textarea>
+        </div>
+        <div class="modal-footer">
+            <button onclick="fecharModalRelatorio()" class="btn-secondary">Fechar</button>
+            <button onclick="copiarRelatorio()" class="btn-primary" style="background-color: #007bff;">
+                Copiar Texto
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const nomeStatusColunas = ["1º Emissão", "Em análise", "Para revisão", "Aprovado", "Liberado/Liberação", "Acessada"];
+    
+    let globalAtaData = [];
+    let currentFilteredData = [];
+    let idCounter = 0;
+
+    document.getElementById('fileUploadAta').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: "", blankrows: true});
+            processAtaData(jsonData);
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    // Função utilitária para normalizar acentos (Essencial para buscas em português)
+    function removerAcentos(str) {
+        if (!str) return "";
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    // Leitura inteligente de datas
+    function checkDates(text, dateFlags, today) {
+        if(!text) return;
+        const regex = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g;
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            let parts = match[0].split(/[\/\-]/);
+            let day = parseInt(parts[0], 10);
+            let month = parseInt(parts[1], 10) - 1;
+            let year = parseInt(parts[2], 10);
+            if (year < 100) year += 2000;
+            
+            let d = new Date(year, month, day);
+            if (d.getDate() === day && d.getMonth() === month && d.getFullYear() === year) {
+                d.setHours(0,0,0,0);
+                if (d >= today) dateFlags.hasFutureDate = true;
+                else dateFlags.hasPastDate = true;
+            }
+        }
+    }
+
+    function processAtaData(rows) {
+        globalAtaData = [];
+        currentFilteredData = [];
+        idCounter = 0;
+        let startParsing = false;
+        let currentSubstation = "Geral";
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const colA = String(row[0] || "").trim();
+            const colB = String(row[1] || "").trim();
+            const colC = String(row[2] || "").trim();
+            const colD = String(row[3] || "").trim();
+
+            if (!startParsing) {
+                if (colB.toLowerCase().includes("assunto") || colC.toLowerCase().includes("descri")) startParsing = true;
+                continue; 
+            }
+
+            if (removerAcentos(String(row[6] || "")).includes("1º emissao")) continue;
+            if (!colA && !colB && !colC && !colD && !row[6] && !row[7]) continue;
+
+            let hasStatus = false;
+            let temRestricao = false; 
+            let isAtrasado = false;
+            let isConcluido = false;
+            let statusDetalhadoHTML = [];
+            let dateFlags = { hasFutureDate: false, hasPastDate: false };
+
+            for (let s = 6; s <= 11; s++) {
+                let cellContent = String(row[s] || "").trim();
+                if (cellContent) {
+                    hasStatus = true;
+                    statusDetalhadoHTML.push(`<div style="margin-bottom: 4px;"><span style="font-weight:600; color:#495057;">${nomeStatusColunas[s - 6]}:</span> <span style="color:#0056b3;">${cellContent}</span></div>`);
+                    let strLow = removerAcentos(cellContent);
+                    
+                    if (strLow.includes("restricao")) temRestricao = true;
+                    
+                    if (strLow.includes("expirado") || strLow.includes("nao aprovado") || strLow.includes("recusado") || strLow.includes("restricao") || strLow.includes("atrasado")) isAtrasado = true;
+                    else if (strLow.includes("ok") || strLow.includes("aprovado") || strLow.includes("liberado") || strLow.includes("liberacao") || strLow.includes("concluido")) isConcluido = true;
+
+                    checkDates(cellContent, dateFlags, today);
+                }
+            }
+
+            if (!hasStatus) {
+                if ((colC.toUpperCase().includes("SE ") && colC.toUpperCase().includes("KV")) || colB.match(/^GS\s*(I|II|III|IV|V)$/i)) {
+                    let textFormated = colC;
+                    if (colB && !textFormated.includes(colB)) textFormated = colB + " - " + textFormated;
+                    currentSubstation = textFormated;
+                    globalAtaData.push({ id: `title_${i}`, type: "title", text: textFormated, subestacao: currentSubstation });
+                } else if (colB || colC) {
+                    let textFormated = colC;
+                    if (colB && colC && !textFormated.includes(colB)) textFormated = colB + " - " + colC;
+                    else if (!colC) textFormated = colB;
+                    
+                    globalAtaData.push({ id: `sub_${i}`, type: "subtitle", text: textFormated, subestacao: currentSubstation });
+                }
+                continue; 
+            }
+
+            let infosExtrasArr = [];
+            for(let p = 12; p <= 15; p++) {
+                let val = String(row[p] || "").trim();
+                if (val !== "") {
+                    infosExtrasArr.push(val);
+                    checkDates(val, dateFlags, today);
+                }
+            }
+
+            let observacaoGeral = colD; 
+            let finalDescricao = colC;
+            if (!colB && finalDescricao && !observacaoGeral) {
+                observacaoGeral = finalDescricao;
+                finalDescricao = "Informação Geral";
+            }
+
+            let obsLow = removerAcentos(observacaoGeral);
+            if (obsLow.includes("expirado") || obsLow.includes("atrasado")) isAtrasado = true;
+            checkDates(observacaoGeral, dateFlags, today);
+
+            let preAcaoSelecionada = "pendente"; 
+            let badgeDateType = null;
+
+            if (isConcluido && !isAtrasado) {
+                preAcaoSelecionada = "cumprido";
+            } else {
+                if (dateFlags.hasFutureDate) {
+                    preAcaoSelecionada = "pendente"; 
+                    badgeDateType = "no_prazo";
+                } else if (isAtrasado || dateFlags.hasPastDate) {
+                    preAcaoSelecionada = "nao_cumprido";
+                    if (dateFlags.hasPastDate) badgeDateType = "vencido";
+                } else {
+                    preAcaoSelecionada = "pendente";
+                }
+            }
+
+            idCounter++;
+            globalAtaData.push({
+                id: idCounter,
+                type: "data",
+                subestacao: currentSubstation,
+                disciplina: colB || "-",
+                descricao: finalDescricao,
+                observacao: observacaoGeral,
+                statusHTML: statusDetalhadoHTML.join(""),
+                infosExtras: infosExtrasArr.join(" | "),
+                acaoUsuario: preAcaoSelecionada,
+                temRestricao: temRestricao,
+                badgeDateType: badgeDateType
+            });
+        }
+
+        document.getElementById('dashboardArea').style.display = 'block';
+        atualizarContadores();
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const termo = removerAcentos(document.getElementById('searchInput').value);
+        const statusFilters = Array.from(document.querySelectorAll('.status-filter:checked')).map(cb => cb.value);
+        const discFilters = Array.from(document.querySelectorAll('.disc-filter:checked')).map(cb => cb.value);
+
+        let filteredList = [];
+        let lastTitle = null;
+        let lastSubtitle = null;
+        let addedTitle = false;
+        let addedSubtitle = false;
+
+        for (let i = 0; i < globalAtaData.length; i++) {
+            const item = globalAtaData[i];
+
+            if (item.type === "title") {
+                lastTitle = item;
+                addedTitle = false;
+                lastSubtitle = null; 
+                addedSubtitle = false;
+            } else if (item.type === "subtitle") {
+                lastSubtitle = item;
+                addedSubtitle = false;
+            } else if (item.type === "data") {
+                
+                let passText = true;
+                if (termo !== "") {
+                    const subTitleText = removerAcentos(lastSubtitle ? lastSubtitle.text : "");
+                    const titleText = removerAcentos(lastTitle ? lastTitle.text : "");
+                    
+                    passText = removerAcentos(item.disciplina).includes(termo) ||
+                               removerAcentos(item.descricao).includes(termo) ||
+                               removerAcentos(item.observacao).includes(termo) ||
+                               removerAcentos(item.statusHTML).includes(termo) ||
+                               subTitleText.includes(termo) || 
+                               titleText.includes(termo);
+                }
+
+                let passStatus = true;
+                if (statusFilters.length > 0) {
+                    passStatus = false;
+                    if (statusFilters.includes("restricao") && item.temRestricao) passStatus = true;
+                    if (statusFilters.includes(item.acaoUsuario)) passStatus = true;
+                }
+
+                let passDisciplina = true;
+                if (discFilters.length > 0) {
+                    passDisciplina = false;
+                    const discText = removerAcentos(item.disciplina) + " " + removerAcentos(lastSubtitle ? lastSubtitle.text : "");
+                    
+                    if (discFilters.includes("civ") && (discText.includes("civ") || discText.includes("arq"))) passDisciplina = true;
+                    if (discFilters.includes("elm") && (discText.includes("elm") || discText.includes("mecanica"))) passDisciplina = true;
+                    if (discFilters.includes("ele") && (discText.includes("ele") || discText.includes("est"))) passDisciplina = true;
+                    if (discFilters.includes("tel") && discText.includes("tel")) passDisciplina = true;
+                    if (discFilters.includes("cftv") && discText.includes("cftv")) passDisciplina = true;
+                    if (discFilters.includes("doc") && (discText.includes("ger") || discText.includes("doc"))) passDisciplina = true;
+                }
+
+                if (passText && passStatus && passDisciplina) {
+                    if (lastTitle && !addedTitle) {
+                        filteredList.push(lastTitle);
+                        addedTitle = true;
+                    }
+                    if (lastSubtitle && !addedSubtitle) {
+                        filteredList.push(lastSubtitle);
+                        addedSubtitle = true;
+                    }
+                    filteredList.push(item);
+                }
+            }
+        }
+        
+        currentFilteredData = filteredList;
+        renderTable(filteredList);
+    }
+
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.querySelectorAll('.status-filter').forEach(cb => cb.addEventListener('change', applyFilters));
+    document.querySelectorAll('.disc-filter').forEach(cb => cb.addEventListener('change', applyFilters));
+
+    function mudarStatusAcao(id, novoStatus) {
+        const item = globalAtaData.find(d => d.id === id);
+        if(item) {
+            item.acaoUsuario = novoStatus;
+            atualizarContadores();
+            applyFilters(); 
+        }
+    }
+
+    function atualizarContadores() {
+        let total = 0, cumpridos = 0, naoCumpridos = 0;
+        globalAtaData.forEach(item => {
+            if(item.type === "data") {
+                total++;
+                if(item.acaoUsuario === "cumprido") cumpridos++;
+                if(item.acaoUsuario === "nao_cumprido") naoCumpridos++;
+            }
+        });
+        document.getElementById('countTotal').innerText = total;
+        document.getElementById('countCumpridos').innerText = cumpridos;
+        document.getElementById('countNaoCumpridos').innerText = naoCumpridos;
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="padding: 30px; text-align: center; color: #6c757d; font-weight: bold;">Nenhum item encontrado com as combinações de filtro selecionadas.</td></tr>`;
+            return;
+        }
+
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+
+            if (item.type === "title") {
+                tr.className = "row-title";
+                tr.innerHTML = `<td colspan="5">${item.text}</td>`;
+                tbody.appendChild(tr);
+            } else if (item.type === "subtitle") {
+                tr.className = "row-subtitle";
+                tr.innerHTML = `<td colspan="5" style="padding-left: 30px; border-left: 4px solid #64748b;">${item.text}</td>`;
+                tbody.appendChild(tr);
+            } else if (item.type === "data") {
+                tr.id = `row-${item.id}`;
+                tr.className = "tr-pendente";
+                
+                let selectClass = "pendente";
+                if(item.acaoUsuario === 'cumprido') { tr.classList.add('tr-cumprido'); selectClass = "cumprido"; }
+                if(item.acaoUsuario === 'nao_cumprido') { tr.classList.add('tr-nao-cumprido'); selectClass = "nao-cumprido"; }
+
+                let badgesArr = [];
+                if (item.temRestricao) badgesArr.push(`<span class="badge badge-warning">⚠️ Restrição (G-L)</span>`);
+                if (item.badgeDateType === 'no_prazo') badgesArr.push(`<span class="badge badge-info">📅 No Prazo</span>`);
+                if (item.badgeDateType === 'vencido') badgesArr.push(`<span class="badge badge-danger">⏱️ Prazo Vencido</span>`);
+
+                let badgesHtml = badgesArr.join("");
+                let obsHtml = item.observacao ? `<div class="obs-box">${item.observacao}</div>` : '';
+
+                let selectHtml = `
+                    <select onchange="mudarStatusAcao(${item.id}, this.value)" class="action-select ${selectClass}">
+                        <option value="pendente" ${item.acaoUsuario === 'pendente' ? 'selected' : ''}>⏳ Em Acompanhamento</option>
+                        <option value="cumprido" ${item.acaoUsuario === 'cumprido' ? 'selected' : ''}>✅ Cumprido / OK</option>
+                        <option value="nao_cumprido" ${item.acaoUsuario === 'nao_cumprido' ? 'selected' : ''}>❌ Não Cumprido</option>
+                    </select>
+                `;
+
+                tr.innerHTML = `
+                    <td style="font-weight:bold; color:#495057;">${item.disciplina}</td>
+                    <td>
+                        <span style="font-weight:600; font-size:0.9rem;">${item.descricao}</span><br>
+                        ${badgesHtml}
+                        ${obsHtml}
+                    </td>
+                    <td style="font-size:0.8rem;">
+                        ${item.statusHTML}
+                    </td>
+                    <td style="font-family:monospace; color:#6c757d; font-size:0.8rem;">
+                        ${item.infosExtras}
+                    </td>
+                    <td style="vertical-align: middle;">
+                        ${selectHtml}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        });
+    }
+
+    function abrirModalRelatorio() {
+        const itensNaoCumpridos = currentFilteredData.filter(i => i.type === "data" && i.acaoUsuario === "nao_cumprido");
+        const textArea = document.getElementById('textoRelatorio');
+        
+        if(itensNaoCumpridos.length === 0) {
+            textArea.value = "Nenhum item marcado como 'Não Cumprido' encontrado com os filtros atuais. Excelente trabalho!";
+        } else {
+            let relatorioFinal = "RELATÓRIO DE PENDÊNCIAS DA SEMANA - FISCALIZAÇÃO\n";
+            relatorioFinal += "=================================================\n\n";
+            
+            let subestacoes = [...new Set(itensNaoCumpridos.map(i => i.subestacao))];
+            
+            subestacoes.forEach(sub => {
+                relatorioFinal += `[ ${sub.toUpperCase()} ]\n`;
+                relatorioFinal += `-------------------------------------------------\n`;
+                
+                let itensDaSub = itensNaoCumpridos.filter(i => i.subestacao === sub);
+                itensDaSub.forEach(item => {
+                    relatorioFinal += `- DISCIPLINA: ${item.disciplina}\n`;
+                    relatorioFinal += `  ITEM: ${item.descricao}\n`;
+                    if(item.observacao) relatorioFinal += `  OBS: ${item.observacao}\n`;
+                    if(item.infosExtras) relatorioFinal += `  REFERÊNCIA: ${item.infosExtras}\n`;
+                    relatorioFinal += `\n`;
+                });
+            });
+            
+            relatorioFinal += "Solicitamos especial atenção e retorno sobre os itens listados acima o mais breve possível.";
+            textArea.value = relatorioFinal;
+        }
+        
+        document.getElementById('modalRelatorio').style.display = 'flex';
+    }
+
+    function fecharModalRelatorio() {
+        document.getElementById('modalRelatorio').style.display = 'none';
+    }
+
+    function copiarRelatorio() {
+        const textArea = document.getElementById('textoRelatorio');
+        textArea.select();
+        textArea.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(textArea.value).then(() => {
+            alert("Texto copiado para a área de transferência! Cole no seu e-mail.");
+        }).catch(err => {
+            alert("Falha ao copiar texto. Selecione manualmente e copie.");
+        });
+    }
+</script>
+</body>
+</html>
