@@ -115,12 +115,19 @@
             border-radius: 4px; font-size: 0.9rem;
         }
 
-        .upload-controls { display: flex; gap: 20px; margin-bottom: 10px; justify-content: center; align-items: center; }
+        .upload-controls { display: flex; gap: 20px; margin-bottom: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .upload-zones { display: flex; gap: 20px; width: 100%; }
+        
         .upload-area {
-            border: 2px dashed #ccc; padding: 20px; text-align: center;
+            flex: 1; border: 2px dashed #ccc; padding: 20px; text-align: center;
             cursor: pointer; transition: border 0.3s; margin-top: 10px;
+            background-color: #fafafa; border-radius: 8px;
         }
-        .upload-area:hover { border-color: #66afe9; background-color: #f9fbfd; }
+        .upload-area:hover { background-color: #f0f8ff; }
+        .upload-area.old { border-color: #ffc107; }
+        .upload-area.old:hover { border-color: #d39e00; }
+        .upload-area.new { border-color: #28a745; }
+        .upload-area.new:hover { border-color: #1e7e34; }
 
         .charts-row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
         .chart-container { flex: 1; min-width: 400px; height: 400px; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
@@ -128,13 +135,15 @@
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed; }
         
-        table th:nth-child(1) { width: 15%; }
-        table th:nth-child(2) { width: 25%; }
+        table th:nth-child(1) { width: 14%; }
+        table th:nth-child(2) { width: 20%; }
         table th:nth-child(3) { width: 8%; } 
-        table th:nth-child(4) { width: 12%; }
-        table th:nth-child(5) { width: 12%; }
-        table th:nth-child(6) { width: 18%; }
-        table th:nth-child(7) { width: 10%; }
+        table th:nth-child(4) { width: 10%; }
+        table th:nth-child(5) { width: 10%; }
+        table th:nth-child(6) { width: 11%; }
+        table th:nth-child(7) { width: 9%; }  
+        table th:nth-child(8) { width: 8%; }  
+        table th:nth-child(9) { width: 10%; } 
 
         thead { position: sticky; top: 0; background-color: #343a40; color: white; z-index: 10; }
         th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); word-wrap: break-word; position: relative; }
@@ -152,7 +161,7 @@
         tr.status-roxo { background-color: var(--color-purple); color: var(--text-purple); }
         
         .stats-summary { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
-        #fileInput { display: none; }
+        .hidden-input { display: none; }
     </style>
 </head>
 <body>
@@ -172,10 +181,20 @@
             </div>
         </div>
 
-        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-            <h3>Clique para fazer Upload dos Arquivos (CSV)</h3>
-            <p>Ordenação disponível clicando nos títulos das colunas</p>
-            <input type="file" id="fileInput" accept=".csv,.json" multiple onchange="handleFileUpload(event)">
+        <div class="upload-zones">
+            <div class="upload-area old" onclick="document.getElementById('fileInputOld').click()">
+                <h3>1. Base de Comparação (Antiga)</h3>
+                <p>Faça upload do relatório anterior para cruzar os dados</p>
+                <input type="file" id="fileInputOld" class="hidden-input" accept=".csv,.json" multiple onchange="handleFileUpload(event, 'old')">
+                <div id="statusOldFile" style="margin-top: 10px; font-weight: bold; color: #856404;">Nenhum arquivo carregado</div>
+            </div>
+
+            <div class="upload-area new" onclick="document.getElementById('fileInputNew').click()">
+                <h3>2. Base Atual (Nova)</h3>
+                <p>Faça upload do relatório mais recente para análise de evolução</p>
+                <input type="file" id="fileInputNew" class="hidden-input" accept=".csv,.json" multiple onchange="handleFileUpload(event, 'new')">
+                <div id="statusNewFile" style="margin-top: 10px; font-weight: bold; color: #155724;">Nenhum arquivo carregado</div>
+            </div>
         </div>
     </div>
 
@@ -183,6 +202,7 @@
         <div class="filters-container">
             <div id="filterProjectContainer" class="filter-group"></div>
             <div id="filterStatusContainer" class="filter-group"></div>
+            <div id="filterMudancaContainer" class="filter-group"></div>
             <div id="filterSubstationContainer" class="filter-group"></div>
             <div id="filterPhaseContainer" class="filter-group"></div>
             <div id="filterScopeContainer" class="filter-group"></div>
@@ -224,8 +244,10 @@
                         <th data-column="escopo" onclick="sortTable('escopo')">Escopo <span class="sort-icon">⇅</span></th>
                         <th data-column="fornecedor" onclick="sortTable('fornecedor')">Fornecedor <span class="sort-icon">⇅</span></th>
                         <th data-column="subestacaoName" onclick="sortTable('subestacaoName')">Subestação <span class="sort-icon">⇅</span></th>
-                        <th data-column="statusRaw" onclick="sortTable('statusRaw')">Status <span class="sort-icon">⇅</span></th>
-                        <th data-column="dataAtualizacao" onclick="sortTable('dataAtualizacao')">Última Atualização <span class="sort-icon">⇅</span></th>
+                        <th data-column="statusRaw" onclick="sortTable('statusRaw')">Status Atual <span class="sort-icon">⇅</span></th>
+                        <th data-column="statusMudancaFiltro" onclick="sortTable('statusMudancaFiltro')">Atualização <span class="sort-icon">⇅</span></th>
+                        <th data-column="aprovadoAnteriormente" onclick="sortTable('aprovadoAnteriormente')">Aprov. Ant. <span class="sort-icon">⇅</span></th>
+                        <th data-column="dataAtualizacao" onclick="sortTable('dataAtualizacao')">Última Atual. <span class="sort-icon">⇅</span></th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -235,10 +257,12 @@
 </div>
 
 <script>
+    let rawOldData = [];
+    let rawNewData = [];
     let rawData = [];
     let filteredData = [];
     let sortState = { column: null, asc: true };
-    let activeFilters = { project: [], status: [], substation: [], phase: [], scope: [], vendor: [], searchText: '' };
+    let activeFilters = { project: [], status: [], mudanca: [], substation: [], phase: [], scope: [], vendor: [], searchText: '' };
     
     const substationMap = {
         'CID02': 'SE Ceará Mirim', 'JPSE': 'SE João Pessoa', 'SE5P1': 'SE Pau Ferro', 'SE5G1': 'SE Garanhuns',
@@ -257,17 +281,29 @@
         'OUTROS': { label: 'Indefinido', class: '', hex: '#6c757d' }
     };
 
-    function handleFileUpload(event) {
+    function handleFileUpload(event, type) {
         const files = event.target.files;
         if (!files.length) return;
-        rawData = [];
+        
+        let tempArr = [];
         let filesProcessed = 0;
         const userEncoding = document.getElementById('encodingSelect').value;
+        
+        if (type === 'old') document.getElementById('statusOldFile').innerText = `${files.length} arquivo(s) carregado(s)`;
+        if (type === 'new') document.getElementById('statusNewFile').innerText = `${files.length} arquivo(s) carregado(s)`;
+
         Array.from(files).forEach(file => {
             parseFile(file, userEncoding, (data, fields) => {
-                processCSVData(data, fields);
+                const processed = processCSVDataBlock(data, fields);
+                tempArr = tempArr.concat(processed);
                 filesProcessed++;
-                if (filesProcessed === files.length) initDashboard();
+                
+                if (filesProcessed === files.length) {
+                    if (type === 'old') rawOldData = tempArr;
+                    if (type === 'new') rawNewData = tempArr;
+                    
+                    checkAndMergeData();
+                }
             });
         });
     }
@@ -294,12 +330,11 @@
         });
     }
 
-    function processCSVData(data, fields) {
-        // Fallback genérico para descobrir qual é a base primária pelos cabeçalhos
+    function processCSVDataBlock(data, fields) {
         const isGuapore = fields.some(f => f.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'codificacao' || f.toLowerCase().includes('estado workflow'));
         const baseProjectName = isGuapore ? 'Guaporé Sul' : 'Geral';
 
-        const mapped = data.map(row => {
+        return data.map(row => {
             const keys = Object.keys(row);
             const getExact = (target) => {
                 const key = keys.find(k => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === target);
@@ -309,51 +344,153 @@
             const titulo = getExact('titulo') || getExact('codificacao') || '';
             const descricao = getExact('descricao') || '';
             const statusRaw = getExact('estado atual') || getExact('estado workflow') || getExact('status') || '';
+            const catStatus = categorizeStatus(statusRaw);
             
             let latestDateStr = '';
             let latestDateObj = null;
+            
+            // Força a aprovação se o status atual for "Liberado para Execução" (VERDE_ESCURO)
+            let foiAprovado = (catStatus === 'VERDE_ESCURO');
 
-            if (isGuapore) {
+            if (!isGuapore) {
+                if (fields && fields.length > 10) {
+                    for (let i = 10; i <= Math.min(fields.length - 1, 35); i++) {
+                        const val = row[fields[i]];
+                        if (val && typeof val === 'string' && val.trim() !== '' && val.trim() !== '--') {
+                            const parsed = tryParseDate(val);
+                            if (parsed && (!latestDateObj || parsed > latestDateObj)) { 
+                                latestDateObj = parsed; 
+                                latestDateStr = val; 
+                            }
+                        }
+                    }
+                    
+                    if (!foiAprovado) {
+                        const colunasAprovacao = [15, 16, 17, 23]; // Colunas P, Q, R, X
+                        colunasAprovacao.forEach(idx => {
+                            if (fields.length > idx) {
+                                const val = row[fields[idx]];
+                                if (val && typeof val === 'string' && val.trim() !== '' && val.trim() !== '--') {
+                                    const parsedDate = tryParseDate(val);
+                                    if (parsedDate) {
+                                        foiAprovado = true;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            } else {
                 keys.forEach(k => {
-                    if (k.toLowerCase().includes('data')) {
+                    const headerLower = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    if (headerLower.includes('data')) {
                         const val = row[k];
                         if (val && val !== '--') {
                             const parsed = tryParseDate(val);
                             if (parsed && (!latestDateObj || parsed > latestDateObj)) { latestDateObj = parsed; latestDateStr = val; }
                         }
                     }
-                });
-            } else {
-                if (fields && fields.length > 10) {
-                    for (let i = 10; i <= Math.min(fields.length - 1, 35); i++) {
-                        const val = row[fields[i]];
-                        if (val) {
-                            const parsed = tryParseDate(val);
-                            if (parsed && (!latestDateObj || parsed > latestDateObj)) { latestDateObj = parsed; latestDateStr = val; }
+                    if (!foiAprovado && (headerLower.includes('aprovado') || headerLower.includes('comentario'))) {
+                        const val = row[k];
+                        if (val && val.trim() !== '' && val.trim() !== '--') {
+                            foiAprovado = true;
                         }
                     }
-                }
+                });
             }
 
             const subInfo = detectSubstation(titulo + ' ' + descricao);
             let fornecedorRaw = getExact('autor') || getExact('responsavel') || getExact('fornecedor') || '';
             let fornecedor = typeof fornecedorRaw === 'string' ? fornecedorRaw.replace(/<br>/gi, ', ') : fornecedorRaw;
             
-            // Lógica unificada para Projeto (Puxa do Prefixo, se não tiver usa o Genérico da Base)
             let projIdentificado = detectProject(titulo);
             if (projIdentificado === 'Outros') {
                 projIdentificado = baseProjectName;
             }
 
             return {
-                titulo, descricao, 
+                titulo, 
+                descricao, 
                 escopo: getExact('pasta') || getExact('escopo') || extractScopeFromPath(getExact('caminho')) || 'GERAL', 
-                fornecedor, statusRaw, statusCategory: categorizeStatus(statusRaw), 
-                dataAtualizacao: latestDateStr, subestacaoName: subInfo.name, fase: detectPhase(titulo), 
-                projeto: projIdentificado, grupoTecnico: detectTechnicalGroup(descricao)
+                fornecedor, 
+                statusRaw, 
+                statusCategory: catStatus, 
+                dataAtualizacao: latestDateStr, 
+                latestDateObj: latestDateObj,
+                aprovadoAnteriormente: foiAprovado ? 'Sim' : 'Não',
+                subestacaoName: subInfo.name, 
+                fase: detectPhase(titulo), 
+                projeto: projIdentificado, 
+                grupoTecnico: detectTechnicalGroup(descricao)
             };
         });
-        rawData = rawData.concat(mapped);
+    }
+
+    function checkAndMergeData() {
+        if (rawOldData.length > 0 && rawNewData.length > 0) {
+            let maxOld = new Date(0);
+            rawOldData.forEach(d => { if (d.latestDateObj && d.latestDateObj > maxOld) maxOld = d.latestDateObj; });
+            
+            let maxNew = new Date(0);
+            rawNewData.forEach(d => { if (d.latestDateObj && d.latestDateObj > maxNew) maxNew = d.latestDateObj; });
+            
+            if (maxOld > maxNew) {
+                alert("Aviso do Sistema: Detectamos que a base carregada em 'Antiga' possui datas mais recentes que a base 'Atual'. As bases foram invertidas automaticamente para garantir uma comparação correta.");
+                let temp = rawOldData;
+                rawOldData = rawNewData;
+                rawNewData = temp;
+                
+                let txtOld = document.getElementById('statusOldFile').innerText;
+                document.getElementById('statusOldFile').innerText = document.getElementById('statusNewFile').innerText;
+                document.getElementById('statusNewFile').innerText = txtOld;
+            }
+        }
+        
+        rawData = [];
+        
+        const oldMap = new Map();
+        rawOldData.forEach(item => {
+            if (!oldMap.has(item.titulo) || (item.latestDateObj && oldMap.get(item.titulo).latestDateObj < item.latestDateObj)) {
+                oldMap.set(item.titulo, item);
+            }
+        });
+        
+        let baseToProcess = rawNewData.length > 0 ? rawNewData : rawOldData;
+        let comparisonBase = (rawNewData.length > 0 && rawOldData.length > 0) ? oldMap : null;
+
+        const newMap = new Map();
+        baseToProcess.forEach(item => {
+            if (!newMap.has(item.titulo) || (item.latestDateObj && newMap.get(item.titulo).latestDateObj < item.latestDateObj)) {
+                newMap.set(item.titulo, item);
+            }
+        });
+
+        newMap.forEach(newItem => {
+            let statusMudancaHTML = 'N/A';
+            let statusMudancaFiltro = 'Sem Base de Comparação';
+            
+            if (comparisonBase) {
+                const oldItem = comparisonBase.get(newItem.titulo);
+                if (oldItem) {
+                    if (oldItem.statusRaw !== newItem.statusRaw) {
+                        statusMudancaHTML = `<span title="Status Anterior: ${oldItem.statusRaw}">Sim (Alterado)</span>`;
+                        statusMudancaFiltro = 'Alterado';
+                    } else {
+                        statusMudancaHTML = `<span>Não (Mantido)</span>`;
+                        statusMudancaFiltro = 'Sem Alteração';
+                    }
+                } else {
+                    statusMudancaHTML = `<span>Novo</span>`;
+                    statusMudancaFiltro = 'Novo Documento';
+                }
+            }
+            
+            newItem.statusMudanca = statusMudancaHTML;
+            newItem.statusMudancaFiltro = statusMudancaFiltro;
+            rawData.push(newItem);
+        });
+
+        initDashboard();
     }
 
     function tryParseDate(dateStr) {
@@ -373,7 +510,6 @@
         return (idx !== -1 && idx + 1 < parts.length) ? parts[idx + 1] : '';
     }
 
-    // NOVA LÓGICA DE DETECÇÃO DE PROJETO
     function detectProject(text) {
         const upperText = text.toUpperCase();
         if (upperText.includes('GST001')) return 'GSI';
@@ -450,7 +586,7 @@
             const tr = document.createElement('tr');
             const config = statusConfig[item.statusCategory] || statusConfig['OUTROS'];
             tr.className = config.class;
-            tr.innerHTML = `<td>${item.titulo}</td><td>${item.descricao}</td><td>${item.escopo}</td><td>${item.fornecedor}</td><td>${item.subestacaoName}</td><td>${item.statusRaw}</td><td>${item.dataAtualizacao}</td>`;
+            tr.innerHTML = `<td>${item.titulo}</td><td>${item.descricao}</td><td>${item.escopo}</td><td>${item.fornecedor}</td><td>${item.subestacaoName}</td><td>${item.statusRaw}</td><td>${item.statusMudanca}</td><td>${item.aprovadoAnteriormente}</td><td>${item.dataAtualizacao}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -504,8 +640,10 @@
     function populateFilters() {
         const getOptions = (key) => [...new Set(rawData.map(item => item[key]).filter(x => x))].sort().map(v => ({ value: v, label: v }));
         const statusOpts = Object.keys(statusConfig).filter(k => k !== 'OUTROS').map(k => ({ value: k, label: statusConfig[k].label }));
+        
         createMultiSelect('filterProjectContainer', 'Projeto', getOptions('projeto'), 'project');
         createMultiSelect('filterStatusContainer', 'Status', statusOpts, 'status');
+        createMultiSelect('filterMudancaContainer', 'Atualização', getOptions('statusMudancaFiltro'), 'mudanca');
         createMultiSelect('filterSubstationContainer', 'Subestação', getOptions('subestacaoName'), 'substation');
         createMultiSelect('filterPhaseContainer', 'Fase', getOptions('fase'), 'phase');
         createMultiSelect('filterScopeContainer', 'Escopo (Pasta)', getOptions('escopo'), 'scope');
@@ -517,12 +655,14 @@
         filteredData = rawData.filter(item => {
             const matchProject = activeFilters.project.length === 0 || activeFilters.project.includes(item.projeto);
             const matchStatus = activeFilters.status.length === 0 || activeFilters.status.includes(item.statusCategory);
+            const matchMudanca = activeFilters.mudanca.length === 0 || activeFilters.mudanca.includes(item.statusMudancaFiltro);
             const matchSubstation = activeFilters.substation.length === 0 || activeFilters.substation.includes(item.subestacaoName);
             const matchPhase = activeFilters.phase.length === 0 || activeFilters.phase.includes(item.fase);
             const matchScope = activeFilters.scope.length === 0 || activeFilters.scope.includes(item.escopo);
             const matchVendor = activeFilters.vendor.length === 0 || activeFilters.vendor.includes(item.fornecedor);
             const matchSearch = searchLower === '' || item.descricao.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(searchLower);
-            return matchProject && matchStatus && matchSubstation && matchPhase && matchScope && matchVendor && matchSearch;
+            
+            return matchProject && matchStatus && matchMudanca && matchSubstation && matchPhase && matchScope && matchVendor && matchSearch;
         });
         document.getElementById('totalCount').innerText = `Total: ${rawData.length}`;
         document.getElementById('filteredCount').innerText = `Exibindo: ${filteredData.length}`;
